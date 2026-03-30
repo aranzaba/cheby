@@ -76,7 +76,9 @@ class MemmapSummary(object):
                 rng = addr_pfx + '0x{:0{w}x}'.format(n_addr, w=self.ndigits)
                 self.raws.append(SummaryRaw(rng, 'REG', name, n, n_addr))
             elif isinstance(n, tree.Block):
-                self.raws.append(SummaryRaw(rng, 'BLOCK', name, n, n_addr))
+                iogrp = getattr(n, 'hdl_iogroup', None)
+                typ = 'BLOCK ({})'.format(iogrp) if iogrp else 'BLOCK'
+                self.raws.append(SummaryRaw(rng, typ, name, n, n_addr))
                 self.gen_raws(n, name + '.', addr_pfx, n_addr)
             elif isinstance(n, tree.Submap):
                 self.raws.append(SummaryRaw(rng, 'SUBMAP', name, n, n_addr))
