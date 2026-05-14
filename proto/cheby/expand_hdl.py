@@ -373,6 +373,13 @@ def expand_x_hdl(n):
     if isinstance(n, tree.Submap):
         if n.filename is not None:
             expand_hdl(n.c_submap)
+            if (getattr(n, 'hdl_reuse_submap_types', False)
+                    and n.include
+                    and not getattr(n.c_submap, 'hdl_iogroup', None)):
+                parser.warning(
+                    n,
+                    "'reuse-submap-types' on '{}' has no effect: the included "
+                    "memory map has no root x-hdl:iogroup".format(n.get_path()))
         return
     if isinstance(n, tree.CompositeNode):
         for el in n.children:
