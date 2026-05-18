@@ -63,6 +63,12 @@ def decode_args():
         action="store_true",
         help="generate structures for bit fields in registers",
     )
+    aparser.add_argument(
+        "--gen-c-types",
+        choices=["local", "global"],
+        default="local",
+        help="scope for C bit-struct typedef names in --gen-c output",
+    )
     aparser.add_argument('--hdl', choices=['vhdl', 'verilog', 'sv'], default='vhdl',
                          help='select language for hdl generation')
     aparser.add_argument('--gen-hdl', nargs='?', const='-',
@@ -250,7 +256,13 @@ def handle_file(args, filename):
             sprint.sprint_cheby(f, t, False, True)
     if args.gen_c is not None:
         with open_filename(args.gen_c) as f:
-            gen_c.gen_c_cheby(f, t, args.c_style, args.gen_c_bit_struct)
+            gen_c.gen_c_cheby(
+                f,
+                t,
+                args.c_style,
+                args.gen_c_bit_struct,
+                args.gen_c_types,
+            )
     if args.gen_c_check_layout is not None:
         with open_filename(args.gen_c_check_layout) as f:
             gen_laychk.gen_chklayout_cheby(f, t)
