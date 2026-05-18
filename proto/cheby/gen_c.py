@@ -5,8 +5,9 @@ from operator import attrgetter
 
 
 class CPrinter(tree.Visitor):
-    def __init__(self, style, gen_bit_struct=False):
+    def __init__(self, style, gen_bit_struct=False, c_types="local"):
         self.struct_prefix = ""
+        self.root_name = ""
         self._reg_struct_buffer = ""
         self._bit_struct_buffer = ""
         self._reg_struct_indent = 0
@@ -19,6 +20,8 @@ class CPrinter(tree.Visitor):
         self.style = style
 
         self.gen_bit_struct = gen_bit_struct
+        assert c_types in ["local", "global"]
+        self.c_types = c_types
         self.utypes = {1: "uint8_t", 2: "uint16_t", 4: "uint32_t", 8: "uint64_t"}
         self.stypes = {1: "int8_t", 2: "int16_t", 4: "int32_t", 8: "int64_t"}
         self.ftypes = {4: "float", 8: "double"}
@@ -107,7 +110,12 @@ class CPrinter(tree.Visitor):
         self.bit_struct_txt("}} {};\n".format(self.get_bit_union_name(n)))
 
     def get_bit_struct_name(self, n, suffix="_s"):
-        return "{}{}{}".format(self.struct_prefix, n.c_name, suffix)
+        local_name = "{}{}".format(self.struct_prefix, n.c_name)
+        if self.c_types == "global":
+            prefix = "{}_".format(self.root_name)
+            if not local_name.startswith(prefix):
+                local_name = "{}{}".format(prefix, local_name)
+        return "{}{}".format(local_name, suffix)
 
     def get_bit_union_name(self, n):
         return self.get_bit_struct_name(n, "_u")
@@ -265,6 +273,7 @@ def cprint_composite(cp, n):
 
 @CPrinter.register(tree.Root)
 def cprint_root(cp, n):
+    cp.root_name = n.name
     if n.version:
         cp.reg_struct_txt("/* For {} version: {} */".format(n.name, n.version))
     if n.c_address_spaces_map is None:
@@ -287,8 +296,8 @@ def to_cmacro(name):
     return "__CHEBY__{}__H__".format(name.upper())
 
 
-def gen_c_cheby(fd, root, style, gen_bit_struct=False):
-    cp = CPrinter(style, gen_bit_struct)
+def gen_c_cheby(fd, root, style, gen_bit_struct=False, c_types="local"):
+    cp = CPrinter(style, gen_bit_struct, c_types)
 
     # Print in a buffer, needed to gather submaps.
     cprint_root(cp, root)
